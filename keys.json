@@ -1,0 +1,14 @@
+{
+    "MY-VIP-KEY-2026": {
+        "plan": "VIP Lifetime",
+        "expiry": "2099-12-31 23:59:59",
+        "hwid": null,
+        "status": "active"
+    },
+    "123456": {
+        "plan": "VIP Lifetime",
+        "expiry": "2099-12-31 23:59:59",
+        "hwid": null,
+        "status": "active"
+    }
+}
