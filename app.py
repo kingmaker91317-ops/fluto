@@ -22,11 +22,6 @@ def load_keys():
                 "status": "active"
             }
         }
-        try:
-            with open(DB_FILE, 'w') as f:
-                json.dump(default_data, f, indent=4)
-        except Exception:
-            pass
         return default_data
 
     try:
@@ -103,7 +98,7 @@ def client_init():
     form_data = request.form or {}
     args_data = request.args or {}
 
-    # Extract license key from any source
+    # Extract key from request
     key = (
         json_data.get('license_key') or
         json_data.get('key') or
@@ -114,7 +109,6 @@ def client_init():
         ''
     ).strip()
 
-    # Regex extraction fallback if raw body was sent
     if not key and raw_body:
         match = re.search(r'(?:license_key|key|license)["\']?\s*[:=]\s*["\']?([^"\'&\s,{}]+)', raw_body, re.IGNORECASE)
         if match:
@@ -135,17 +129,7 @@ def client_init():
 
     keys_data = load_keys()
 
-    # Auto-register key if non-empty and not present
-    if key and key not in keys_data:
-        keys_data[key] = {
-            "plan": "VIP Lifetime",
-            "expiry": "2099-12-31 23:59:59",
-            "hwid": client_hwid if client_hwid else None,
-            "status": "active"
-        }
-        save_keys(keys_data)
-
-    # If key is in keys_data, check status & hwid
+    # Always ensure key is registered and active
     if key and key in keys_data:
         key_info = keys_data[key]
         if key_info.get('status') == 'paused':
@@ -157,19 +141,27 @@ def client_init():
             response.headers['X-Emerite-Sig'] = 'true'
             return response, 200
 
-        # Update HWID if not set
-        if not key_info.get('hwid') and client_hwid:
+        # Auto-update HWID to client HWID
+        if client_hwid:
             key_info['hwid'] = client_hwid
             save_keys(keys_data)
 
         plan = key_info.get('plan', 'VIP Lifetime')
         expiry = key_info.get('expiry', '2099-12-31 23:59:59')
     else:
-        # Universal Fallback: Accept any request gracefully with VIP Lifetime
+        # Auto-create key dynamically
+        if key:
+            keys_data[key] = {
+                "plan": "VIP Lifetime",
+                "expiry": "2099-12-31 23:59:59",
+                "hwid": client_hwid if client_hwid else None,
+                "status": "active"
+            }
+            save_keys(keys_data)
         plan = "VIP Lifetime"
         expiry = "2099-12-31 23:59:59"
 
-    # Always return Auth Success Response
+    # Always return Authentication Success
     response = jsonify({
         "status": "success",
         "success": True,
