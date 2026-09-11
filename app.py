@@ -89,84 +89,17 @@ def reset_hwid(key):
 # ==================== FLUORITE API ENDPOINT ====================
 
 @app.route('/api/v1/software/init', methods=['POST', 'GET'])
+@app.route('/api/v1/software/init/', methods=['POST', 'GET'])
 def client_init():
     if request.method == 'GET':
         return jsonify({"status": "online", "message": "Fluorite Server is running!"})
 
-    raw_body = request.get_data(as_text=True) or ''
-    json_data = request.get_json(silent=True) or {}
-    form_data = request.form or {}
-    args_data = request.args or {}
-
-    # Extract key from request
-    key = (
-        json_data.get('license_key') or
-        json_data.get('key') or
-        form_data.get('license_key') or
-        form_data.get('key') or
-        args_data.get('license_key') or
-        args_data.get('key') or
-        ''
-    ).strip()
-
-    if not key and raw_body:
-        match = re.search(r'(?:license_key|key|license)["\']?\s*[:=]\s*["\']?([^"\'&\s,{}]+)', raw_body, re.IGNORECASE)
-        if match:
-            key = match.group(1).strip()
-        elif len(raw_body.strip()) > 0 and len(raw_body.strip()) < 50 and not raw_body.startswith('{'):
-            key = raw_body.strip()
-
-    client_hwid = (
-        json_data.get('hwid') or
-        form_data.get('hwid') or
-        args_data.get('hwid') or
-        ''
-    )
-    if not client_hwid and raw_body:
-        hwid_match = re.search(r'hwid["\']?\s*[:=]\s*["\']?([^"\'&\s,{}]+)', raw_body, re.IGNORECASE)
-        if hwid_match:
-            client_hwid = hwid_match.group(1).strip()
-
-    keys_data = load_keys()
-
-    # Always ensure key is registered and active
-    if key and key in keys_data:
-        key_info = keys_data[key]
-        if key_info.get('status') == 'paused':
-            response = jsonify({
-                "status": "failed",
-                "success": False,
-                "message": "License key is currently paused."
-            })
-            response.headers['X-Emerite-Sig'] = 'true'
-            return response, 200
-
-        # Auto-update HWID to client HWID
-        if client_hwid:
-            key_info['hwid'] = client_hwid
-            save_keys(keys_data)
-
-        plan = key_info.get('plan', 'VIP Lifetime')
-        expiry = key_info.get('expiry', '2099-12-31 23:59:59')
-    else:
-        # Auto-create key dynamically
-        if key:
-            keys_data[key] = {
-                "plan": "VIP Lifetime",
-                "expiry": "2099-12-31 23:59:59",
-                "hwid": client_hwid if client_hwid else None,
-                "status": "active"
-            }
-            save_keys(keys_data)
-        plan = "VIP Lifetime"
-        expiry = "2099-12-31 23:59:59"
-
-    # Always return Authentication Success
+    # Unconditional Universal Success Response for Fluorite Binary Client
     response = jsonify({
         "status": "success",
         "success": True,
-        "plan": plan,
-        "expiry": expiry,
+        "plan": "VIP Lifetime",
+        "expiry": "2099-12-31 23:59:59",
         "min_version": "1.0",
         "latest_version": "1.0",
         "message": "Authentication Successful",
