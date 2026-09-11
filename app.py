@@ -90,11 +90,12 @@ def reset_hwid(key):
 
 @app.route('/api/v1/software/init', methods=['POST', 'GET'])
 @app.route('/api/v1/software/init/', methods=['POST', 'GET'])
+@app.route('/api/v1/software/a/init', methods=['POST', 'GET'])
+@app.route('/api/v1/software/a/init/', methods=['POST', 'GET'])
 def client_init():
     if request.method == 'GET':
         return jsonify({"status": "online", "message": "Fluorite Server is running!"})
 
-    # Unconditional Universal Success Response for Fluorite Binary Client
     response = jsonify({
         "status": "success",
         "success": True,
